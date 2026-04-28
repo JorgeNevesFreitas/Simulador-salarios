@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador de Salários — Portugal</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header>
+    <h1>Simulador de Salários</h1>
+    <p>Simulação de remuneração líquida e custo para a empresa — Portugal</p>
+  </header>
+
+  <main>
+    <form id="form-simulador" novalidate>
+
+      <!-- ── ANO FISCAL ───────────────────────────────────────────── -->
+      <div class="campo-grupo ano-fiscal-grupo">
+        <label for="ano-fiscal">Ano Fiscal</label>
+        <div class="ano-fiscal-row">
+          <select id="ano-fiscal" name="anoFiscal">
+            <!-- preenchido pelo JS ao carregar o manifest -->
+          </select>
+          <span id="tag-tabela-ativa" class="tag-tabela" hidden></span>
+        </div>
+      </div>
+
+      <!-- ── PASSO 1: CONTEXTO FISCAL ─────────────────────────────── -->
+      <section id="secao-contexto" class="secao">
+        <h2>1. Contexto Fiscal</h2>
+        <p class="secao-desc">
+          Estes campos determinam qual a tabela de retenção na fonte de IRS aplicável.
+        </p>
+
+        <div class="campo-grupo">
+          <label for="localizacao">Localização</label>
+          <select id="localizacao" name="localizacao" required>
+            <option value="">Selecione…</option>
+            <option value="continente">Portugal Continental</option>
+            <option value="acores">Região Autónoma dos Açores</option>
+            <option value="madeira">Região Autónoma da Madeira</option>
+          </select>
+        </div>
+
+        <div class="campo-grupo">
+          <label for="situacao-familiar">Situação Familiar</label>
+          <select id="situacao-familiar" name="situacaoFamiliar" required>
+            <option value="">Selecione…</option>
+            <option value="solteiro">Solteiro / Não casado</option>
+            <option value="casado1">Casado — 1 titular</option>
+            <option value="casado2">Casado — 2 titulares</option>
+          </select>
+        </div>
+
+        <div class="campo-grupo">
+          <label for="num-dependentes">Número de Dependentes</label>
+          <input
+            type="number" id="num-dependentes" name="numDependentes"
+            min="0" max="20" value="0" required
+          />
+          <span class="campo-ajuda">Filhos ou outros dependentes a cargo</span>
+        </div>
+
+        <fieldset class="campo-grupo checkboxes">
+          <legend>Condições especiais</legend>
+          <label class="checkbox-label">
+            <input type="checkbox" id="incapacidade-titular" name="incapacidadeTitular" />
+            Incapacidade do titular ≥ 60%
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="dependentes-deficiencia" name="dependentesDeficiencia" />
+            Dependentes com deficiência
+            <span class="campo-ajuda" style="display:inline">(contam em dobro na parcela adicional)</span>
+          </label>
+        </fieldset>
+      </section>
+
+      <!-- Badge dinâmico com a tabela AT selecionada -->
+      <div id="info-tabela" class="info-tabela" hidden>
+        <span class="info-tabela-ico">→</span>
+        <span>Tabela AT aplicável:</span>
+        <strong id="tabela-letra">—</strong>
+        <span id="tabela-desc" class="info-tabela-desc">—</span>
+      </div>
+
+      <!-- ── PASSO 2: RUBRICAS SALARIAIS ──────────────────────────── -->
+      <section id="secao-rubricas" class="secao secao-desativada">
+        <h2>2. Rubricas Salariais</h2>
+
+        <!-- Salário Base -->
+        <div class="rubrica-bloco">
+          <h3 class="rubrica-titulo">Salário Base</h3>
+          <div class="campo-grupo">
+            <label for="salario-mensal">Salário Bruto Mensal</label>
+            <div class="input-com-sufixo">
+              <input
+                type="number" id="salario-mensal" name="salarioMensal"
+                min="0" step="50" placeholder="0,00"
+              />
+              <span class="input-sufixo">€</span>
+            </div>
+            <span class="campo-ajuda">Pago em 14 meses · inclui sub. férias e sub. natal</span>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Subsídio de Alimentação -->
+        <div class="rubrica-bloco">
+          <h3 class="rubrica-titulo">Subsídio de Alimentação</h3>
+
+          <div class="campos-inline">
+            <div class="campo-grupo">
+              <label for="sa-diario">Valor Diário</label>
+              <div class="input-com-sufixo">
+                <input type="number" id="sa-diario" name="saDiario" min="0" step="0.10" value="6.00" />
+                <span class="input-sufixo">€</span>
+              </div>
+              <span class="campo-ajuda">21 dias × 11 meses</span>
+            </div>
+            <div class="campo-grupo">
+              <label for="sa-limite">Limite de isenção diário</label>
+              <div class="input-com-sufixo">
+                <input type="number" id="sa-limite" name="saLimite" min="0" step="0.10" value="6.00" />
+                <span class="input-sufixo">€</span>
+              </div>
+              <span class="campo-ajuda" id="sa-limite-ajuda">Pagamento em numerário</span>
+            </div>
+          </div>
+
+          <label class="toggle-label">
+            <span class="toggle">
+              <input type="checkbox" id="sa-cartao" name="saCartaoRefeicao" />
+              <span class="toggle-slider"></span>
+            </span>
+            Pagamento por cartão refeição
+          </label>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Ajudas de Custo -->
+        <div class="rubrica-bloco">
+          <label class="toggle-label">
+            <span class="toggle">
+              <input type="checkbox" id="tem-ac" name="temAjudasCusto" />
+              <span class="toggle-slider"></span>
+            </span>
+            Ajudas de Custo
+          </label>
+          <div id="painel-ac" class="painel-condicional" hidden>
+            <div class="campo-grupo" style="margin-top:0.75rem">
+              <label for="ac-mensal">Valor Mensal</label>
+              <div class="input-com-sufixo">
+                <input type="number" id="ac-mensal" name="acMensal" min="0" step="10" value="0" />
+                <span class="input-sufixo">€</span>
+              </div>
+              <span class="campo-ajuda">Totalmente isento de IRS e SS · pago em 12 meses</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Encargos da Empresa -->
+        <div class="rubrica-bloco">
+          <h3 class="rubrica-titulo">Encargos da Empresa</h3>
+
+          <label class="toggle-label" style="margin-bottom:0.75rem">
+            <span class="toggle">
+              <input type="checkbox" id="tem-seguro-saude" name="temSeguroSaude" />
+              <span class="toggle-slider"></span>
+            </span>
+            Seguro de Saúde
+          </label>
+          <div id="painel-seguro-saude" class="painel-condicional" hidden>
+            <div class="campo-grupo" style="margin-bottom:0.75rem">
+              <label for="seguro-saude-mensal">Prémio Mensal</label>
+              <div class="input-com-sufixo">
+                <input type="number" id="seguro-saude-mensal" name="seguroSaudeMensal" min="0" step="5" value="0" />
+                <span class="input-sufixo">€</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="campo-grupo">
+            <label for="taxa-seguro-at">Seguro de Acidentes de Trabalho</label>
+            <div class="input-com-sufixo" style="max-width:160px">
+              <input type="number" id="taxa-seguro-at" name="taxaSeguroAT" min="0" max="20" step="0.01" value="1.85" />
+              <span class="input-sufixo">%</span>
+            </div>
+            <span class="campo-ajuda">% sobre salário anual · valor guardado automaticamente</span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ── AÇÕES ────────────────────────────────────────────────── -->
+      <div class="acoes">
+        <button type="submit" id="btn-calcular" disabled>Calcular</button>
+        <button type="button" id="btn-limpar">Limpar / Nova Simulação</button>
+      </div>
+
+    </form>
+
+    <!-- ── RELATÓRIO ─────────────────────────────────────────────── -->
+    <section id="secao-relatorio" class="secao" hidden>
+
+      <div class="relatorio-header">
+        <h2>Relatório</h2>
+        <button type="button" id="btn-exportar">&#8595; Exportar PDF</button>
+      </div>
+
+      <!-- Resumo Executivo -->
+      <div class="resumo-executivo">
+        <div class="kpi-card">
+          <div class="kpi-label">Salário Bruto Mensal</div>
+          <div class="kpi-valor" id="kpi-bruto-mensal">—</div>
+        </div>
+        <div class="kpi-card destaque">
+          <div class="kpi-label">Salário Líquido Mensal</div>
+          <div class="kpi-valor" id="kpi-liquido-mensal">—</div>
+          <div class="kpi-sub" id="kpi-liquido-anual">— /ano</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Custo Total Empresa / mês</div>
+          <div class="kpi-valor" id="kpi-custo-mensal">—</div>
+          <div class="kpi-sub" id="kpi-custo-anual">— /ano</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Líquido / Bruto</div>
+          <div class="kpi-valor" id="kpi-ratio-lb">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Custo Empresa / Líquido</div>
+          <div class="kpi-valor" id="kpi-ratio-cl">—</div>
+        </div>
+      </div>
+
+      <div class="relatorio-tabelas">
+
+        <!-- Perspetiva do Trabalhador -->
+        <div class="tabela-bloco">
+          <h3>Perspetiva do Trabalhador</h3>
+          <div class="tabela-wrap">
+            <table>
+              <thead>
+                <tr><th>Rubrica</th><th>Mensal</th><th>Anual</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Salário Bruto</td>
+                  <td id="t-sal-mensal" class="valor-positivo">—</td>
+                  <td id="t-sal-anual"  class="valor-positivo">—</td>
+                </tr>
+                <tr>
+                  <td>Subsídio de Alimentação (total)</td>
+                  <td id="t-sa-total-mensal">—</td>
+                  <td id="t-sa-total-anual">—</td>
+                </tr>
+                <tr class="linha-isenta">
+                  <td>↳ SA — parte isenta</td>
+                  <td id="t-sa-isento-mensal" class="valor-positivo">—</td>
+                  <td id="t-sa-isento-anual"  class="valor-positivo">—</td>
+                </tr>
+                <tr class="linha-isenta">
+                  <td>↳ SA — parte sujeita a IRS/SS</td>
+                  <td id="t-sa-sujeito-mensal">—</td>
+                  <td id="t-sa-sujeito-anual">—</td>
+                </tr>
+                <tr id="linha-ac-trab">
+                  <td>Ajudas de Custo</td>
+                  <td id="t-ac-mensal" class="valor-positivo">—</td>
+                  <td id="t-ac-anual"  class="valor-positivo">—</td>
+                </tr>
+                <tr class="linha-subtotal">
+                  <td>TOTAL BRUTO</td>
+                  <td id="t-bruto-mensal">—</td>
+                  <td id="t-bruto-anual">—</td>
+                </tr>
+                <tr>
+                  <td>(−) Retenção IRS</td>
+                  <td id="t-ret-mensal" class="valor-negativo">—</td>
+                  <td id="t-ret-anual"  class="valor-negativo">—</td>
+                </tr>
+                <tr>
+                  <td>(−) Segurança Social (11%)</td>
+                  <td id="t-ss-mensal"  class="valor-negativo">—</td>
+                  <td id="t-ss-anual"   class="valor-negativo">—</td>
+                </tr>
+                <tr class="linha-total">
+                  <td>SALÁRIO LÍQUIDO</td>
+                  <td id="t-liq-mensal">—</td>
+                  <td id="t-liq-anual">—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Perspetiva da Empresa -->
+        <div class="tabela-bloco">
+          <h3>Perspetiva da Empresa</h3>
+          <div class="tabela-wrap">
+            <table>
+              <thead>
+                <tr><th>Rubrica</th><th>Mensal</th><th>Anual</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Salário Bruto</td>
+                  <td id="e-sal-mensal">—</td>
+                  <td id="e-sal-anual">—</td>
+                </tr>
+                <tr>
+                  <td>(+) TSU s/ Salário (23,75%)</td>
+                  <td id="e-tsu-sal-mensal">—</td>
+                  <td id="e-tsu-sal-anual">—</td>
+                </tr>
+                <tr>
+                  <td>(+) SA total pago</td>
+                  <td id="e-sa-mensal">—</td>
+                  <td id="e-sa-anual">—</td>
+                </tr>
+                <tr>
+                  <td>(+) TSU s/ SA não isento (23,75%)</td>
+                  <td id="e-tsu-sa-mensal">—</td>
+                  <td id="e-tsu-sa-anual">—</td>
+                </tr>
+                <tr id="linha-ac-emp">
+                  <td>(+) Ajudas de Custo</td>
+                  <td id="e-ac-mensal">—</td>
+                  <td id="e-ac-anual">—</td>
+                </tr>
+                <tr id="linha-seg-saude">
+                  <td>(+) Seguro de Saúde</td>
+                  <td id="e-seg-saude-mensal">—</td>
+                  <td id="e-seg-saude-anual">—</td>
+                </tr>
+                <tr>
+                  <td id="e-seg-at-label">(+) Seguro Acid. Trabalho (1,85%)</td>
+                  <td id="e-seg-at-mensal">—</td>
+                  <td id="e-seg-at-anual">—</td>
+                </tr>
+                <tr class="linha-total">
+                  <td>CUSTO TOTAL EMPRESA</td>
+                  <td id="e-custo-mensal">—</td>
+                  <td id="e-custo-anual">—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- .relatorio-tabelas -->
+
+      <div class="relatorio-nota" id="relatorio-nota"></div>
+
+    </section>
+
+  </main>
+
+  <footer>
+    <p id="rodape-tabelas">Tabelas de retenção na fonte: a carregar…</p>
+    <p>
+      Fonte:
+      <a href="https://info.portaldasfinancas.gov.pt" target="_blank" rel="noopener">
+        Portal das Finanças — AT
+      </a>
+    </p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

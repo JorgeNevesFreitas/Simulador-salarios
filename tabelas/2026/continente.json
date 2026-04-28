@@ -1,0 +1,445 @@
+{
+  "ano": 2026,
+  "regiao": "continente",
+  "label": "Portugal Continental",
+  "fonte": "Despacho n.º xxx/2026 — 1 de janeiro a 31 de dezembro de 2026",
+  "tabelas": {
+    "I": {
+      "descricao": "Não casado sem dependentes / Casado 2 titulares",
+      "escaloes": [
+        {
+          "ate": 920.0,
+          "taxa": 0.0,
+          "parcela": 0.0,
+          "parcelaDep": 0.0
+        },
+        {
+          "ate": 1042.0,
+          "taxa": 0.45,
+          "parcela": 414.0012,
+          "parcelaDep": 21.43
+        },
+        {
+          "ate": 1108.0,
+          "taxa": 0.36895,
+          "parcela": 329.5462,
+          "parcelaDep": 21.43
+        },
+        {
+          "ate": 1154.0,
+          "taxa": 0.157,
+          "parcela": 94.71,
+          "parcelaDep": 21.43
+        },
+        {
+          "ate": 1212.0,
+          "taxa": 0.212,
+          "parcela": 158.18,
+          "parcelaDep": 21.43
+        },
+        {
+          "ate": 1819.0,
+          "taxa": 0.241,
+          "parcela": 193.33,
+          "parcelaDep": 21.43
+        },
+        {
+          "ate": 2119.0,
+          "taxa": 0.311,
+          "parcela": 320.66,
+          "parcelaDep": 21.43
+        },
+        {
+          "ate": 2499.0,
+          "taxa": 0.349,
+          "parcela": 401.19,
+          "parcelaDep": 21.43
+        },
+        {
+          "ate": 3305.0,
+          "taxa": 0.3836,
+          "parcela": 487.66,
+          "parcelaDep": 21.43
+        },
+        {
+          "ate": 5547.0,
+          "taxa": 0.3969,
+          "parcela": 531.62,
+          "parcelaDep": 21.43
+        },
+        {
+          "ate": 20221.0,
+          "taxa": 0.4495,
+          "parcela": 823.4,
+          "parcelaDep": 21.43
+        },
+        {
+          "ate": null,
+          "taxa": 0.4717,
+          "parcela": 1272.31,
+          "parcelaDep": 21.43
+        }
+      ]
+    },
+    "II": {
+      "descricao": "Não casado com 1 ou mais dependentes",
+      "escaloes": [
+        {
+          "ate": 920.0,
+          "taxa": 0.0,
+          "parcela": 0.0,
+          "parcelaDep": 0.0
+        },
+        {
+          "ate": 1042.0,
+          "taxa": 0.45,
+          "parcela": 414.0012,
+          "parcelaDep": 34.29
+        },
+        {
+          "ate": 1108.0,
+          "taxa": 0.36895,
+          "parcela": 329.5462,
+          "parcelaDep": 34.29
+        },
+        {
+          "ate": 1154.0,
+          "taxa": 0.157,
+          "parcela": 94.71,
+          "parcelaDep": 34.29
+        },
+        {
+          "ate": 1212.0,
+          "taxa": 0.212,
+          "parcela": 158.18,
+          "parcelaDep": 34.29
+        },
+        {
+          "ate": 1819.0,
+          "taxa": 0.241,
+          "parcela": 193.33,
+          "parcelaDep": 34.29
+        },
+        {
+          "ate": 2119.0,
+          "taxa": 0.311,
+          "parcela": 320.66,
+          "parcelaDep": 34.29
+        },
+        {
+          "ate": 2499.0,
+          "taxa": 0.349,
+          "parcela": 401.19,
+          "parcelaDep": 34.29
+        },
+        {
+          "ate": 3305.0,
+          "taxa": 0.3836,
+          "parcela": 487.66,
+          "parcelaDep": 34.29
+        },
+        {
+          "ate": 5547.0,
+          "taxa": 0.3969,
+          "parcela": 531.62,
+          "parcelaDep": 34.29
+        },
+        {
+          "ate": 20221.0,
+          "taxa": 0.4495,
+          "parcela": 823.4,
+          "parcelaDep": 34.29
+        },
+        {
+          "ate": null,
+          "taxa": 0.4717,
+          "parcela": 1272.31,
+          "parcelaDep": 34.29
+        }
+      ]
+    },
+    "III": {
+      "descricao": "Casado único titular",
+      "escaloes": [
+        {
+          "ate": 991.0,
+          "taxa": 0.0,
+          "parcela": 0.0,
+          "parcelaDep": 0.0
+        },
+        {
+          "ate": 1042.0,
+          "taxa": 0.45,
+          "parcela": 445.9488,
+          "parcelaDep": 42.86
+        },
+        {
+          "ate": 1108.0,
+          "taxa": 0.29375,
+          "parcela": 283.1372,
+          "parcelaDep": 42.86
+        },
+        {
+          "ate": 1119.0,
+          "taxa": 0.125,
+          "parcela": 96.17,
+          "parcelaDep": 42.86
+        },
+        {
+          "ate": 1432.0,
+          "taxa": 0.1272,
+          "parcela": 98.64,
+          "parcelaDep": 42.86
+        },
+        {
+          "ate": 1962.0,
+          "taxa": 0.157,
+          "parcela": 141.32,
+          "parcelaDep": 42.86
+        },
+        {
+          "ate": 2240.0,
+          "taxa": 0.1938,
+          "parcela": 213.53,
+          "parcelaDep": 42.86
+        },
+        {
+          "ate": 2773.0,
+          "taxa": 0.2277,
+          "parcela": 289.47,
+          "parcelaDep": 42.86
+        },
+        {
+          "ate": 3389.0,
+          "taxa": 0.257,
+          "parcela": 370.72,
+          "parcelaDep": 42.86
+        },
+        {
+          "ate": 5965.0,
+          "taxa": 0.2881,
+          "parcela": 476.12,
+          "parcelaDep": 42.86
+        },
+        {
+          "ate": 20265.0,
+          "taxa": 0.3843,
+          "parcela": 1049.96,
+          "parcelaDep": 42.86
+        },
+        {
+          "ate": null,
+          "taxa": 0.4717,
+          "parcela": 2821.13,
+          "parcelaDep": 42.86
+        }
+      ]
+    },
+    "IV": {
+      "descricao": "Não casado ou casado 2 titulares sem dependentes — titular com incapacidade ≥ 60%",
+      "escaloes": [
+        {
+          "ate": 1694.0,
+          "taxa": 0.0,
+          "parcela": 0.0,
+          "parcelaDep": 0.0
+        },
+        {
+          "ate": 2063.0,
+          "taxa": 0.212,
+          "parcela": 359.13,
+          "parcelaDep": 0.0
+        },
+        {
+          "ate": 2492.0,
+          "taxa": 0.311,
+          "parcela": 563.37,
+          "parcelaDep": 0.0
+        },
+        {
+          "ate": 4487.0,
+          "taxa": 0.349,
+          "parcela": 658.07,
+          "parcelaDep": 0.0
+        },
+        {
+          "ate": 4753.0,
+          "taxa": 0.3836,
+          "parcela": 813.33,
+          "parcelaDep": 0.0
+        },
+        {
+          "ate": 6687.0,
+          "taxa": 0.3969,
+          "parcela": 876.55,
+          "parcelaDep": 0.0
+        },
+        {
+          "ate": 20468.0,
+          "taxa": 0.4495,
+          "parcela": 1228.29,
+          "parcelaDep": 0.0
+        },
+        {
+          "ate": null,
+          "taxa": 0.4717,
+          "parcela": 1682.68,
+          "parcelaDep": 0.0
+        }
+      ]
+    },
+    "V": {
+      "descricao": "Não casado com 1 ou mais dependentes — titular com incapacidade ≥ 60%",
+      "escaloes": [
+        {
+          "ate": 1938.0,
+          "taxa": 0.0,
+          "parcela": 0.0,
+          "parcelaDep": 0.0
+        },
+        {
+          "ate": 2063.0,
+          "taxa": 0.2132,
+          "parcela": 413.19,
+          "parcelaDep": 42.86
+        },
+        {
+          "ate": 2854.0,
+          "taxa": 0.311,
+          "parcela": 614.96,
+          "parcelaDep": 42.86
+        },
+        {
+          "ate": 4504.0,
+          "taxa": 0.349,
+          "parcela": 723.42,
+          "parcelaDep": 42.86
+        },
+        {
+          "ate": 6826.0,
+          "taxa": 0.3836,
+          "parcela": 879.26,
+          "parcelaDep": 42.86
+        },
+        {
+          "ate": 7048.0,
+          "taxa": 0.3969,
+          "parcela": 970.05,
+          "parcelaDep": 42.86
+        },
+        {
+          "ate": 20468.0,
+          "taxa": 0.4495,
+          "parcela": 1340.78,
+          "parcelaDep": 42.86
+        },
+        {
+          "ate": null,
+          "taxa": 0.4717,
+          "parcela": 1795.17,
+          "parcelaDep": 42.86
+        }
+      ]
+    },
+    "VI": {
+      "descricao": "Casado 2 titulares com 1 ou mais dependentes — titular com incapacidade ≥ 60%",
+      "escaloes": [
+        {
+          "ate": 1668.0,
+          "taxa": 0.0,
+          "parcela": 0.0,
+          "parcelaDep": 0.0
+        },
+        {
+          "ate": 2068.0,
+          "taxa": 0.2049,
+          "parcela": 341.78,
+          "parcelaDep": 21.43
+        },
+        {
+          "ate": 2497.0,
+          "taxa": 0.241,
+          "parcela": 416.44,
+          "parcelaDep": 21.43
+        },
+        {
+          "ate": 3107.0,
+          "taxa": 0.311,
+          "parcela": 591.23,
+          "parcelaDep": 21.43
+        },
+        {
+          "ate": 4504.0,
+          "taxa": 0.349,
+          "parcela": 709.3,
+          "parcelaDep": 21.43
+        },
+        {
+          "ate": 6826.0,
+          "taxa": 0.3836,
+          "parcela": 865.14,
+          "parcelaDep": 21.43
+        },
+        {
+          "ate": 7048.0,
+          "taxa": 0.3969,
+          "parcela": 955.93,
+          "parcelaDep": 21.43
+        },
+        {
+          "ate": 20468.0,
+          "taxa": 0.4495,
+          "parcela": 1326.66,
+          "parcelaDep": 21.43
+        },
+        {
+          "ate": null,
+          "taxa": 0.4717,
+          "parcela": 1781.05,
+          "parcelaDep": 21.43
+        }
+      ]
+    },
+    "VII": {
+      "descricao": "Casado único titular — titular com incapacidade ≥ 60%",
+      "escaloes": [
+        {
+          "ate": 2325.0,
+          "taxa": 0.0,
+          "parcela": 0.0,
+          "parcelaDep": 0.0
+        },
+        {
+          "ate": 3494.0,
+          "taxa": 0.2277,
+          "parcela": 529.41,
+          "parcelaDep": 42.86
+        },
+        {
+          "ate": 3761.0,
+          "taxa": 0.257,
+          "parcela": 631.79,
+          "parcelaDep": 42.86
+        },
+        {
+          "ate": 6687.0,
+          "taxa": 0.2881,
+          "parcela": 748.76,
+          "parcelaDep": 42.86
+        },
+        {
+          "ate": 20468.0,
+          "taxa": 0.4244,
+          "parcela": 1660.2,
+          "parcelaDep": 42.86
+        },
+        {
+          "ate": null,
+          "taxa": 0.4717,
+          "parcela": 2628.34,
+          "parcelaDep": 42.86
+        }
+      ]
+    }
+  }
+}

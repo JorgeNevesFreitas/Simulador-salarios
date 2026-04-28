@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c ' *)",
+      "Bash(node --input-type=module)",
+      "Bash(node -e ' *)",
+      "Bash(rm -f _embed_tmp.js.txt tabelas_inline_raw.txt)"
+    ]
+  }
+}
