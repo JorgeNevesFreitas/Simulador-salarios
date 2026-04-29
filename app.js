@@ -363,11 +363,11 @@ function calcularSimulacao(inp, tabelasAno) {
   const totalSSAnual    = ssTrabSalAnual + ssTrabSAAnual;
   const liquidoAnual    = totalBrutoAnual - totalRetAnual - totalSSAnual;
 
-  // Versões mensais para o relatório (médias mensais simples)
-  const totalBrutoMensal = totalBrutoAnual / 12;
-  const totalRetMensal   = totalRetAnual   / 12;
-  const totalSSMensal    = totalSSAnual    / 12;
-  const liquidoMensal    = liquidoAnual    / 12;
+  // Versões mensais — mês típico (não média anual ÷ 12)
+  const totalBrutoMensal = salMensal + sa.totalMensal + ac.mensal;
+  const totalRetMensal   = retSalMensal    + retSAMensal;
+  const totalSSMensal    = ssTrabSalMensal + ssTrabSAMensal;
+  const liquidoMensal    = totalBrutoMensal - totalRetMensal - totalSSMensal;
 
   /* ── 6. Perspetiva da empresa ─────────────────────────────── */
   const taxaAT = inp.taxaSeguroAT ?? carregarTaxaSeguroAT();
@@ -380,7 +380,7 @@ function calcularSimulacao(inp, tabelasAno) {
 
   // Seguro de saúde (custo direto, sem encargos adicionais)
   const seguroSaudeAnual   = inp.temSeguroSaude
-    ? (inp.seguroSaudeMensal ?? 0) * 12
+    ? (inp.seguroSaudeMensal ?? 0)
     : 0;
 
   // Seguro de acidentes de trabalho (calculado sobre salário anual)
@@ -395,6 +395,10 @@ function calcularSimulacao(inp, tabelasAno) {
     + seguroATAnual;
 
   const custoEmpresaMensal = custoEmpresaAnual / 12;
+
+  const remuneracoesTotaisAnual = salAnual + sa.totalAnual + ac.anual;
+  const ssEmpresaAnual          = ssPatronalSalAnual + ssPatronalSAAnual;
+  const subtotalCustoAnual      = remuneracoesTotaisAnual + ssEmpresaAnual;
 
   /* ── 7. Rácios ────────────────────────────────────────────── */
   // Líquido / Bruto: percentagem do salário mensal recebida a líquido
@@ -435,31 +439,33 @@ function calcularSimulacao(inp, tabelasAno) {
       saSujeitoAnual:      sa.sujeitoAnual,
       acAnual:             ac.anual,
       totalBrutoAnual,
+      totalBrutoMediaMensal: totalBrutoAnual / 12,
       retencaoIRSAnual:    totalRetAnual,
       ssTrabalhadorAnual:  totalSSAnual,
       liquidoAnual,
+      liquidoMediaMensal:  liquidoAnual / 12,
     },
 
-    /* Empresa — anual (e mensal médio) */
+    /* Empresa — anual e mensal médio */
     e: {
-      salarioAnual: salAnual,
-      ssPatronalSalAnual,
-      saTotalAnual:        sa.totalAnual,
-      ssPatronalSAAnual,
-      acAnual:             ac.anual,
+      salarioAnual:              salAnual,
+      salarioMensal:             salAnual                 / 12,
+      saTotalAnual:              sa.totalAnual,
+      saTotalMensal:             sa.totalAnual            / 12,
+      acAnual:                   ac.anual,
+      acMensal:                  ac.anual                 / 12,
+      remuneracoesTotaisAnual,
+      remuneracoesTotaisMensal:  remuneracoesTotaisAnual  / 12,
+      ssEmpresaAnual,
+      ssEmpresaMensal:           ssEmpresaAnual           / 12,
+      subtotalCustoAnual,
+      subtotalCustoMensal:       subtotalCustoAnual       / 12,
       seguroSaudeAnual,
+      seguroSaudeMensal:         seguroSaudeAnual         / 12,
       seguroATAnual,
+      seguroATMensal:            seguroATAnual            / 12,
       custoEmpresaAnual,
       custoEmpresaMensal,
-
-      /* Mensais médios */
-      salarioMensal:        salAnual            / 12,
-      ssPatronalSalMensal:  ssPatronalSalAnual  / 12,
-      saTotalMensal:        sa.totalAnual       / 12,
-      ssPatronalSAMensal:   ssPatronalSAAnual   / 12,
-      acMensal:             ac.anual            / 12,
-      seguroSaudeMensal:    seguroSaudeAnual    / 12,
-      seguroATMensal:       seguroATAnual       / 12,
     },
 
     /* Rácios */
@@ -647,14 +653,15 @@ function atualizarBadgeTabela() {
 
 function renderRelatorio(res) {
   /* KPIs */
-  document.getElementById('kpi-bruto-mensal').textContent  = fmt(res.t.salarioMensal);
-  document.getElementById('kpi-liquido-mensal').textContent = fmt(res.t.liquidoMensal);
-  document.getElementById('kpi-liquido-anual').textContent  = fmt(res.t.liquidoAnual) + ' /ano';
-  document.getElementById('kpi-custo-mensal').textContent   = fmt(res.e.custoEmpresaMensal);
-  document.getElementById('kpi-custo-anual').textContent    = fmt(res.e.custoEmpresaAnual) + ' /ano';
-  document.getElementById('kpi-ratio-lb').textContent = pct(res.ratioLiquidoBruto);
-  document.getElementById('kpi-ratio-cl').textContent =
+  document.getElementById('kpi-bruto-anual').textContent  = fmt(res.t.totalBrutoAnual)    + ' /ano';
+  document.getElementById('kpi-bruto-mensal').textContent = fmt(res.t.totalBrutoMensal)   + ' /mês';
+  document.getElementById('kpi-custo-anual').textContent  = fmt(res.e.custoEmpresaAnual)  + ' /ano';
+  document.getElementById('kpi-custo-mensal').textContent = fmt(res.e.custoEmpresaMensal) + ' /mês';
+  document.getElementById('kpi-ratio-lb').textContent     = pct(res.ratioLiquidoBruto);
+  document.getElementById('kpi-ratio-cl').textContent     =
     res.ratioCustoLiquido.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '×';
+  document.getElementById('kpi-liq-anual').textContent    = fmt(res.t.liquidoAnual)       + ' /ano';
+  document.getElementById('kpi-liq-mensal').textContent   = fmt(res.t.liquidoMediaMensal) + ' /mês';
 
   /* Tabela trabalhador */
   cel('t-sal-mensal',       res.t.salarioMensal);
@@ -673,22 +680,26 @@ function renderRelatorio(res) {
   cel('t-ret-anual',        res.t.retencaoIRSAnual);
   cel('t-ss-mensal',        res.t.ssTrabalhadorMensal);
   cel('t-ss-anual',         res.t.ssTrabalhadorAnual);
-  cel('t-liq-mensal',       res.t.liquidoMensal);
-  cel('t-liq-anual',        res.t.liquidoAnual);
+  cel('t-liq-mensal',           res.t.liquidoMensal);
+  cel('t-liq-anual',            res.t.liquidoAnual);
+  cel('t-bruto-media-mensal',   res.t.totalBrutoMediaMensal);
+  cel('t-liq-media-mensal',     res.t.liquidoMediaMensal);
 
   document.getElementById('linha-ac-trab').hidden = res.t.acMensal === 0;
 
   /* Tabela empresa */
+  cel('e-rem-mensal',        res.e.remuneracoesTotaisMensal);
+  cel('e-rem-anual',         res.e.remuneracoesTotaisAnual);
   cel('e-sal-mensal',        res.e.salarioMensal);
   cel('e-sal-anual',         res.e.salarioAnual);
-  cel('e-tsu-sal-mensal',    res.e.ssPatronalSalMensal);
-  cel('e-tsu-sal-anual',     res.e.ssPatronalSalAnual);
   cel('e-sa-mensal',         res.e.saTotalMensal);
   cel('e-sa-anual',          res.e.saTotalAnual);
-  cel('e-tsu-sa-mensal',     res.e.ssPatronalSAMensal);
-  cel('e-tsu-sa-anual',      res.e.ssPatronalSAAnual);
   cel('e-ac-mensal',         res.e.acMensal);
   cel('e-ac-anual',          res.e.acAnual);
+  cel('e-ss-emp-mensal',     res.e.ssEmpresaMensal);
+  cel('e-ss-emp-anual',      res.e.ssEmpresaAnual);
+  cel('e-subtotal-mensal',   res.e.subtotalCustoMensal);
+  cel('e-subtotal-anual',    res.e.subtotalCustoAnual);
   cel('e-seg-saude-mensal',  res.e.seguroSaudeMensal);
   cel('e-seg-saude-anual',   res.e.seguroSaudeAnual);
   cel('e-seg-at-mensal',     res.e.seguroATMensal);
@@ -826,6 +837,34 @@ async function init() {
   /* Painéis condicionais */
   document.getElementById('tem-ac').addEventListener('change', atualizarPainelAC);
   document.getElementById('tem-seguro-saude').addEventListener('change', atualizarPainelSeguroSaude);
+
+  /* Toggle genérico para linhas de detalhe expansíveis */
+  function toggleDetalhe(seletor, idChevron) {
+    const linhas = [...document.querySelectorAll(seletor)];
+    const chevron = document.getElementById(idChevron);
+    if (linhas[0].classList.contains('oculto')) {
+      linhas.forEach(tr => { tr.classList.remove('oculto'); tr.classList.add('a-fechar'); });
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        linhas.forEach(tr => tr.classList.remove('a-fechar'));
+      }));
+      chevron.classList.add('expandido');
+    } else {
+      linhas.forEach(tr => tr.classList.add('a-fechar'));
+      linhas[0].addEventListener('transitionend', () => {
+        linhas.forEach(tr => { tr.classList.remove('a-fechar'); tr.classList.add('oculto'); });
+      }, { once: true });
+      chevron.classList.remove('expandido');
+    }
+  }
+  document.getElementById('linha-sa-toggle').addEventListener('click',    () => toggleDetalhe('.linha-sa-detalhe',  'sa-chevron'));
+  document.getElementById('linha-bruto-toggle').addEventListener('click', () => toggleDetalhe('.linha-media-bruto', 'bruto-chevron'));
+  document.getElementById('linha-liq-toggle').addEventListener('click',   () => toggleDetalhe('.linha-media-liq',   'liq-chevron'));
+  document.getElementById('linha-rem-toggle').addEventListener('click',   () => toggleDetalhe('.linha-rem-detalhe', 'rem-chevron'));
+
+  /* Toggle visibilidade card Remuneração Líquida */
+  document.getElementById('toggle-mostrar-liq').addEventListener('change', e => {
+    document.getElementById('kpi-card-liq').hidden = !e.target.checked;
+  });
 
   /* Taxa seguro AT → guardar em localStorage */
   document.getElementById('taxa-seguro-at').addEventListener('change', () => {

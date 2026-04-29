@@ -177,9 +177,9 @@
           </label>
           <div id="painel-seguro-saude" class="painel-condicional" hidden>
             <div class="campo-grupo" style="margin-bottom:0.75rem">
-              <label for="seguro-saude-mensal">Prémio Mensal</label>
+              <label for="seguro-saude-mensal">Prémio Anual</label>
               <div class="input-com-sufixo">
-                <input type="number" id="seguro-saude-mensal" name="seguroSaudeMensal" min="0" step="5" value="0" />
+                <input type="number" id="seguro-saude-mensal" name="seguroSaudeMensal" min="0" step="60" value="0" />
                 <span class="input-sufixo">€</span>
               </div>
             </div>
@@ -210,32 +210,42 @@
 
       <div class="relatorio-header">
         <h2>Relatório</h2>
-        <button type="button" id="btn-exportar">&#8595; Exportar PDF</button>
+        <div class="relatorio-header-acoes">
+          <label class="toggle-liq-label">
+            <input type="checkbox" id="toggle-mostrar-liq" checked />
+            Mostrar Remuneração Líquida
+          </label>
+          <button type="button" id="btn-exportar">&#8595; Exportar PDF</button>
+        </div>
       </div>
 
       <!-- Resumo Executivo -->
       <div class="resumo-executivo">
-        <div class="kpi-card">
-          <div class="kpi-label">Salário Bruto Mensal</div>
-          <div class="kpi-valor" id="kpi-bruto-mensal">—</div>
-        </div>
         <div class="kpi-card destaque">
-          <div class="kpi-label">Salário Líquido Mensal</div>
-          <div class="kpi-valor" id="kpi-liquido-mensal">—</div>
-          <div class="kpi-sub" id="kpi-liquido-anual">— /ano</div>
+          <div class="kpi-label">Remuneração Bruta</div>
+          <div class="kpi-valor" id="kpi-bruto-anual">—</div>
+          <div class="kpi-sub"  id="kpi-bruto-mensal">— /mês</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Custo Total Empresa / mês</div>
-          <div class="kpi-valor" id="kpi-custo-mensal">—</div>
-          <div class="kpi-sub" id="kpi-custo-anual">— /ano</div>
+          <div class="kpi-label">Custo Empresa</div>
+          <div class="kpi-valor" id="kpi-custo-anual">—</div>
+          <div class="kpi-sub"  id="kpi-custo-mensal">— /mês</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Líquido / Bruto</div>
-          <div class="kpi-valor" id="kpi-ratio-lb">—</div>
+          <div class="kpi-label">Rácios</div>
+          <div class="kpi-racio-grupo">
+            <div class="kpi-racio-valor" id="kpi-ratio-lb">—</div>
+            <div class="kpi-racio-desc">Líquido / Bruto</div>
+          </div>
+          <div class="kpi-racio-grupo">
+            <div class="kpi-racio-valor" id="kpi-ratio-cl">—</div>
+            <div class="kpi-racio-desc">Custo Empresa / Líquido</div>
+          </div>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Custo Empresa / Líquido</div>
-          <div class="kpi-valor" id="kpi-ratio-cl">—</div>
+        <div class="kpi-card" id="kpi-card-liq">
+          <div class="kpi-label">Remuneração Líquida</div>
+          <div class="kpi-valor" id="kpi-liq-anual">—</div>
+          <div class="kpi-sub"  id="kpi-liq-mensal">— /mês</div>
         </div>
       </div>
 
@@ -255,17 +265,17 @@
                   <td id="t-sal-mensal" class="valor-positivo">—</td>
                   <td id="t-sal-anual"  class="valor-positivo">—</td>
                 </tr>
-                <tr>
-                  <td>Subsídio de Alimentação (total)</td>
+                <tr id="linha-sa-toggle">
+                  <td><span class="sa-chevron" id="sa-chevron"></span>Subsídio de Alimentação (total)</td>
                   <td id="t-sa-total-mensal">—</td>
                   <td id="t-sa-total-anual">—</td>
                 </tr>
-                <tr class="linha-isenta">
+                <tr class="linha-isenta linha-sa-detalhe oculto">
                   <td>↳ SA — parte isenta</td>
                   <td id="t-sa-isento-mensal" class="valor-positivo">—</td>
                   <td id="t-sa-isento-anual"  class="valor-positivo">—</td>
                 </tr>
-                <tr class="linha-isenta">
+                <tr class="linha-isenta linha-sa-detalhe oculto">
                   <td>↳ SA — parte sujeita a IRS/SS</td>
                   <td id="t-sa-sujeito-mensal">—</td>
                   <td id="t-sa-sujeito-anual">—</td>
@@ -275,10 +285,15 @@
                   <td id="t-ac-mensal" class="valor-positivo">—</td>
                   <td id="t-ac-anual"  class="valor-positivo">—</td>
                 </tr>
-                <tr class="linha-subtotal">
-                  <td>TOTAL BRUTO</td>
+                <tr class="linha-subtotal" id="linha-bruto-toggle">
+                  <td><span class="sa-chevron" id="bruto-chevron"></span>TOTAL BRUTO</td>
                   <td id="t-bruto-mensal">—</td>
                   <td id="t-bruto-anual">—</td>
+                </tr>
+                <tr class="linha-isenta linha-media-detalhe linha-media-bruto oculto">
+                  <td>↳ Média mensal (÷ 12)</td>
+                  <td id="t-bruto-media-mensal">—</td>
+                  <td>—</td>
                 </tr>
                 <tr>
                   <td>(−) Retenção IRS</td>
@@ -290,10 +305,15 @@
                   <td id="t-ss-mensal"  class="valor-negativo">—</td>
                   <td id="t-ss-anual"   class="valor-negativo">—</td>
                 </tr>
-                <tr class="linha-total">
-                  <td>SALÁRIO LÍQUIDO</td>
+                <tr class="linha-total" id="linha-liq-toggle">
+                  <td><span class="sa-chevron" id="liq-chevron"></span>SALÁRIO LÍQUIDO</td>
                   <td id="t-liq-mensal">—</td>
                   <td id="t-liq-anual">—</td>
+                </tr>
+                <tr class="linha-isenta linha-media-detalhe linha-media-liq oculto">
+                  <td>↳ Média mensal (÷ 12)</td>
+                  <td id="t-liq-media-mensal">—</td>
+                  <td>—</td>
                 </tr>
               </tbody>
             </table>
@@ -309,30 +329,35 @@
                 <tr><th>Rubrica</th><th>Mensal</th><th>Anual</th></tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>Salário Bruto</td>
+                <tr id="linha-rem-toggle">
+                  <td><span class="sa-chevron" id="rem-chevron"></span>Remunerações Totais</td>
+                  <td id="e-rem-mensal">—</td>
+                  <td id="e-rem-anual">—</td>
+                </tr>
+                <tr class="linha-isenta linha-rem-detalhe oculto">
+                  <td>↳ Salário</td>
                   <td id="e-sal-mensal">—</td>
                   <td id="e-sal-anual">—</td>
                 </tr>
-                <tr>
-                  <td>(+) TSU s/ Salário (23,75%)</td>
-                  <td id="e-tsu-sal-mensal">—</td>
-                  <td id="e-tsu-sal-anual">—</td>
-                </tr>
-                <tr>
-                  <td>(+) SA total pago</td>
+                <tr class="linha-isenta linha-rem-detalhe oculto">
+                  <td>↳ Subsídio de Alimentação</td>
                   <td id="e-sa-mensal">—</td>
                   <td id="e-sa-anual">—</td>
                 </tr>
-                <tr>
-                  <td>(+) TSU s/ SA não isento (23,75%)</td>
-                  <td id="e-tsu-sa-mensal">—</td>
-                  <td id="e-tsu-sa-anual">—</td>
-                </tr>
-                <tr id="linha-ac-emp">
-                  <td>(+) Ajudas de Custo</td>
+                <tr class="linha-isenta linha-rem-detalhe oculto" id="linha-ac-emp">
+                  <td>↳ Ajudas de Custo</td>
                   <td id="e-ac-mensal">—</td>
                   <td id="e-ac-anual">—</td>
+                </tr>
+                <tr>
+                  <td>(+) Custos SS — parte empresa (23,75%)</td>
+                  <td id="e-ss-emp-mensal">—</td>
+                  <td id="e-ss-emp-anual">—</td>
+                </tr>
+                <tr class="linha-subtotal">
+                  <td>SUBTOTAL — Custo com Remunerações</td>
+                  <td id="e-subtotal-mensal">—</td>
+                  <td id="e-subtotal-anual">—</td>
                 </tr>
                 <tr id="linha-seg-saude">
                   <td>(+) Seguro de Saúde</td>

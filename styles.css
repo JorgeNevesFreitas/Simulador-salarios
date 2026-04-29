@@ -449,6 +449,27 @@ button {
   gap: var(--gap-md);
   margin-bottom: var(--gap-lg);
 }
+.relatorio-header-acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-md);
+  flex-wrap: wrap;
+}
+.toggle-liq-label {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-xs);
+  font-size: var(--text-sm);
+  color: var(--cinza-texto);
+  cursor: pointer;
+  user-select: none;
+}
+.toggle-liq-label input[type="checkbox"] {
+  accent-color: var(--azul-medio);
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
 
 /* ── Resumo executivo ──────────────────────────────────────── */
 .resumo-executivo {
@@ -500,6 +521,25 @@ button {
 }
 
 .kpi-card.destaque .kpi-sub { color: rgba(255,255,255,.60); }
+
+/* Card de Rácios — dois grupos empilhados */
+.kpi-racio-grupo + .kpi-racio-grupo {
+  margin-top: var(--gap-xs);
+  padding-top: var(--gap-xs);
+  border-top: 1px solid var(--azul-borda);
+}
+.kpi-racio-valor {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--azul-escuro);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+.kpi-racio-desc {
+  font-size: var(--text-xs);
+  color: var(--cinza-suave);
+  margin-top: 0.1rem;
+}
 
 /* ── Tabelas do relatório ──────────────────────────────────── */
 .relatorio-tabelas {
@@ -588,6 +628,55 @@ tbody tr.linha-isenta td:first-child {
   color: var(--cinza-suave);
   font-style: italic;
 }
+
+/* Linhas com toggle expansível */
+#linha-sa-toggle,
+#linha-bruto-toggle,
+#linha-liq-toggle,
+#linha-rem-toggle { cursor: pointer; user-select: none; }
+#linha-sa-toggle:hover td:first-child { color: var(--azul-medio); }
+
+.sa-chevron {
+  display: inline-block;
+  width: 0.8em;
+  margin-right: 0.3rem;
+  font-size: 0.65em;
+  color: var(--azul-medio);
+  transition: transform var(--trans);
+  vertical-align: middle;
+}
+.sa-chevron::before { content: '▶'; }
+.sa-chevron.expandido { transform: rotate(90deg); }
+
+/* Chevron nos cabeçalhos escuros (linha-total) */
+.linha-total .sa-chevron { color: rgba(255,255,255,0.75); }
+
+/* Transição suave nas linhas de detalhe expansíveis */
+.linha-sa-detalhe td,
+.linha-media-detalhe td,
+.linha-rem-detalhe td {
+  overflow: hidden;
+  max-height: 3rem;
+  opacity: 1;
+  transition: max-height 0.22s ease, opacity 0.22s ease,
+              padding-top 0.22s ease, padding-bottom 0.22s ease;
+}
+/* Estado durante animação de fechar/abrir */
+.linha-sa-detalhe.a-fechar td,
+.linha-media-detalhe.a-fechar td,
+.linha-rem-detalhe.a-fechar td {
+  max-height: 0 !important;
+  opacity: 0;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+.linha-sa-detalhe.a-fechar,
+.linha-media-detalhe.a-fechar,
+.linha-rem-detalhe.a-fechar { border-bottom: none; }
+/* Estado final oculto — sem qualquer espaço */
+.linha-sa-detalhe.oculto,
+.linha-media-detalhe.oculto,
+.linha-rem-detalhe.oculto { display: none; }
 
 /* ── Rodapé do relatório ───────────────────────────────────── */
 .relatorio-nota {
@@ -815,45 +904,136 @@ footer a:hover { color: var(--branco); }
    PRINT (exportar PDF via window.print)
    ═══════════════════════════════════════════════════════════════ */
 @media print {
-  body { background: white; font-size: 11pt; }
+  @page { size: A4 landscape; margin: 8mm; }
 
+  /* Forçar cores exatas em todo o documento */
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+  body { background: white; font-size: 9pt; margin: 0; padding: 0; }
+
+  /* ── Cabeçalho compacto ── */
   header {
+    padding: 5px 14px !important;
     background: var(--azul-escuro) !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
   }
+  header h1 { font-size: 13pt !important; }
+  header p  { font-size: 8pt !important; margin-top: 1px !important; }
 
-  main {
-    display: block;
-    padding: 0;
-    max-width: 100%;
-  }
+  main { display: block; padding: 0; max-width: 100%; }
 
+  /* ── Elementos a esconder ── */
   #form-simulador,
-  footer { display: none; }
+  footer,
+  .relatorio-header-acoes { display: none !important; }
 
+  /* ── Secção de relatório ── */
   #secao-relatorio {
     display: block !important;
-    border: none;
-    box-shadow: none;
-    padding: 0;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
 
-  .secao { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+  .secao { box-shadow: none; border: none; }
 
+  .relatorio-header { margin-bottom: 5pt !important; }
+  #secao-relatorio h2 { font-size: 10pt !important; margin-bottom: 0 !important; }
+
+  /* ── Cards em linha única ── */
+  .resumo-executivo {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    gap: 4pt !important;
+    margin-bottom: 6pt !important;
+  }
+  .kpi-card {
+    flex: 1 !important;
+    padding: 5pt 6pt !important;
+    page-break-inside: avoid;
+  }
+  .kpi-card.destaque {
+    background: linear-gradient(135deg, var(--azul-medio), var(--azul-claro)) !important;
+    color: white !important;
+  }
+  .kpi-card.destaque .kpi-label { color: rgba(255,255,255,.70) !important; }
+  .kpi-card.destaque .kpi-valor { color: white !important; }
+  .kpi-card.destaque .kpi-sub   { color: rgba(255,255,255,.60) !important; }
+  .kpi-label        { font-size: 6pt !important; margin-bottom: 2pt !important; }
+  .kpi-valor        { font-size: 11pt !important; line-height: 1.1 !important; }
+  .kpi-sub          { font-size: 7pt !important; margin-top: 1pt !important; }
+  .kpi-racio-valor  { font-size: 10pt !important; }
+  .kpi-racio-desc   { font-size: 6pt !important; }
+  .kpi-racio-grupo + .kpi-racio-grupo { margin-top: 2pt !important; padding-top: 2pt !important; }
+
+  /* ── Tabelas lado a lado ── */
+  .relatorio-tabelas {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 6pt !important;
+    align-items: flex-start !important;
+    margin-bottom: 0 !important;
+  }
+  .tabela-bloco {
+    flex: 1 !important;
+    page-break-inside: avoid;
+    min-width: 0;
+  }
+  .tabela-bloco h3 {
+    font-size: 8pt !important;
+    margin-bottom: 3pt !important;
+    padding-bottom: 2pt !important;
+  }
+  .tabela-wrap { overflow: visible !important; }
+
+  /* ── Células compactas ── */
   thead th {
     background: var(--azul-escuro) !important;
     color: white !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    font-size: 7pt !important;
+    padding: 3pt 4pt !important;
   }
-
+  tbody td {
+    font-size: 8pt !important;
+    padding: 2pt 4pt !important;
+  }
   tbody tr.linha-total td {
     background: var(--azul-escuro) !important;
     color: white !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    font-size: 8pt !important;
+  }
+  tbody tr.linha-subtotal td {
+    background: var(--azul-suave) !important;
   }
 
-  #btn-exportar { display: none; }
+  /* ── Detalhe sempre expandido em PDF ── */
+  .linha-sa-detalhe,
+  .linha-media-detalhe,
+  .linha-rem-detalhe { display: table-row !important; }
+  .linha-sa-detalhe td,
+  .linha-media-detalhe td,
+  .linha-rem-detalhe td {
+    max-height: none !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+  }
+
+  /* ── Sem quebras de página internas ── */
+  table            { page-break-inside: avoid; }
+  .tabela-bloco    { page-break-inside: avoid; }
+
+  /* ── Nota de rodapé compacta ── */
+  .relatorio-nota {
+    font-size: 6.5pt !important;
+    padding: 3pt 5pt !important;
+    margin-top: 4pt !important;
+    margin-bottom: 0 !important;
+    page-break-inside: avoid;
+  }
+
+  /* ── Eliminar espaço residual no fim ── */
+  #secao-relatorio > *:last-child { margin-bottom: 0 !important; padding-bottom: 0 !important; }
+
+  #btn-exportar { display: none !important; }
 }
