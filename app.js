@@ -510,8 +510,13 @@ function carregarTaxaSeguroAT() {
 
 /* ── Formatação ─────────────────────────────────────────────── */
 
-const fmt = v =>
-  Number(v).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 });
+const fmt = v => {
+  const n = Number(v);
+  if (!isFinite(n)) return '—';
+  const sign = n < 0 ? '-' : '';
+  const [int, dec] = Math.abs(n).toFixed(2).split('.');
+  return sign + int.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + dec + ' €';
+};
 
 const pct = v =>
   (v * 100).toLocaleString('pt-PT', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' %';
