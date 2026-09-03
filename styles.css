@@ -690,6 +690,35 @@ tbody tr.linha-isenta td:first-child {
   line-height: 1.7;
 }
 
+/* ── Observações ────────────────────────────────────────────── */
+.observacoes-bloco {
+  margin-top: var(--gap-xl);
+}
+
+.observacoes-textarea {
+  width: 100%;
+  min-height: 6rem;
+  padding: 0.6rem 0.85rem;
+  font-family: var(--font);
+  font-size: var(--text-base);
+  color: var(--cinza-texto);
+  background: var(--branco);
+  border: 1.5px solid var(--cinza-borda);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+  transition: border-color var(--trans), box-shadow var(--trans);
+}
+
+.observacoes-textarea:hover { border-color: var(--azul-claro); }
+
+.observacoes-textarea:focus {
+  outline: none;
+  border-color: var(--azul-claro);
+  box-shadow: 0 0 0 3px rgba(45,95,168,.15);
+}
+
+.observacoes-print { display: none; }
+
 /* ═══════════════════════════════════════════════════════════════
    FOOTER
    ═══════════════════════════════════════════════════════════════ */
@@ -1031,6 +1060,25 @@ footer a:hover { color: var(--branco); }
     margin-bottom: 0 !important;
     page-break-inside: avoid;
   }
+
+  /* ── Observações ── */
+  .observacoes-bloco {
+    margin-top: 4pt !important;
+    page-break-inside: avoid;
+  }
+  .observacoes-bloco h3 {
+    font-size: 8pt !important;
+    margin-bottom: 3pt !important;
+    padding-bottom: 2pt !important;
+  }
+  .observacoes-textarea { display: none !important; }
+  .observacoes-print {
+    display: block !important;
+    white-space: pre-wrap;
+    font-size: 8pt !important;
+    color: var(--cinza-texto);
+  }
+  .observacoes-bloco.observacoes-vazia { display: none !important; }
 
   /* ── Eliminar espaço residual no fim ── */
   #secao-relatorio > *:last-child { margin-bottom: 0 !important; padding-bottom: 0 !important; }

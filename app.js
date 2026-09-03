@@ -907,8 +907,20 @@ async function init() {
     limparFormulario();
   });
 
+  /* Observações → sincronizar texto para impressão */
+  const sincronizarObservacoes = () => {
+    const texto = document.getElementById('obs-texto').value;
+    document.getElementById('obs-print').textContent = texto;
+    document.getElementById('bloco-observacoes').classList.toggle('observacoes-vazia', texto.trim() === '');
+  };
+  document.getElementById('obs-texto').addEventListener('input', sincronizarObservacoes);
+  window.addEventListener('beforeprint', sincronizarObservacoes);
+
   /* Exportar PDF */
-  document.getElementById('btn-exportar').addEventListener('click', () => window.print());
+  document.getElementById('btn-exportar').addEventListener('click', () => {
+    sincronizarObservacoes();
+    window.print();
+  });
 }
 
 /* Arrancar quando o DOM estiver pronto */
