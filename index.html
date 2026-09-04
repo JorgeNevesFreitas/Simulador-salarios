@@ -103,6 +103,24 @@
             </div>
             <span class="campo-ajuda">Pago em 14 meses · inclui sub. férias e sub. natal</span>
           </div>
+
+          <label class="toggle-label" style="margin-top:0.75rem">
+            <span class="toggle">
+              <input type="checkbox" id="tem-iht" name="temIHT" />
+              <span class="toggle-slider"></span>
+            </span>
+            Isenção de Horário de Trabalho (IHT)
+          </label>
+          <div id="painel-iht" class="painel-condicional" hidden>
+            <div class="campo-grupo" style="margin-top:0.75rem">
+              <label for="iht-percentagem">Percentagem de suplemento</label>
+              <div class="input-com-sufixo" style="max-width:160px">
+                <input type="number" id="iht-percentagem" name="ihtPercentagem" min="0" max="100" step="1" value="22" />
+                <span class="input-sufixo">%</span>
+              </div>
+              <span class="campo-ajuda">% sobre o salário base · valor guardado automaticamente</span>
+            </div>
+          </div>
         </div>
 
         <div class="divider"></div>
@@ -260,10 +278,20 @@
                 <tr><th>Rubrica</th><th>Mensal</th><th>Anual</th></tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>Salário Bruto</td>
+                <tr id="linha-sal-toggle" class="linha-sem-detalhe">
+                  <td><span class="sa-chevron" id="sal-chevron"></span><span id="t-sal-label">Salário Bruto</span></td>
                   <td id="t-sal-mensal" class="valor-positivo">—</td>
                   <td id="t-sal-anual"  class="valor-positivo">—</td>
+                </tr>
+                <tr class="linha-isenta linha-sal-detalhe oculto">
+                  <td>↳ Salário Base</td>
+                  <td id="t-sal-base-mensal" class="valor-positivo">—</td>
+                  <td id="t-sal-base-anual"  class="valor-positivo">—</td>
+                </tr>
+                <tr class="linha-isenta linha-sal-detalhe oculto">
+                  <td id="t-iht-label">↳ Suplemento IHT</td>
+                  <td id="t-iht-mensal" class="valor-positivo">—</td>
+                  <td id="t-iht-anual"  class="valor-positivo">—</td>
                 </tr>
                 <tr id="linha-sa-toggle">
                   <td><span class="sa-chevron" id="sa-chevron"></span>Subsídio de Alimentação (total)</td>
@@ -338,6 +366,11 @@
                   <td>↳ Salário</td>
                   <td id="e-sal-mensal">—</td>
                   <td id="e-sal-anual">—</td>
+                </tr>
+                <tr class="linha-isenta linha-rem-detalhe oculto" id="linha-iht-emp">
+                  <td id="e-iht-label">↳ Suplemento IHT</td>
+                  <td id="e-iht-mensal">—</td>
+                  <td id="e-iht-anual">—</td>
                 </tr>
                 <tr class="linha-isenta linha-rem-detalhe oculto">
                   <td>↳ Subsídio de Alimentação</td>

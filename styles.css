@@ -630,11 +630,16 @@ tbody tr.linha-isenta td:first-child {
 }
 
 /* Linhas com toggle expansível */
+#linha-sal-toggle,
 #linha-sa-toggle,
 #linha-bruto-toggle,
 #linha-liq-toggle,
 #linha-rem-toggle { cursor: pointer; user-select: none; }
 #linha-sa-toggle:hover td:first-child { color: var(--azul-medio); }
+
+/* Linha "Salário Bruto" sem IHT — não expansível */
+#linha-sal-toggle.linha-sem-detalhe { cursor: default; }
+#linha-sal-toggle.linha-sem-detalhe .sa-chevron { display: none; }
 
 .sa-chevron {
   display: inline-block;
@@ -653,6 +658,7 @@ tbody tr.linha-isenta td:first-child {
 
 /* Transição suave nas linhas de detalhe expansíveis */
 .linha-sa-detalhe td,
+.linha-sal-detalhe td,
 .linha-media-detalhe td,
 .linha-rem-detalhe td {
   overflow: hidden;
@@ -663,6 +669,7 @@ tbody tr.linha-isenta td:first-child {
 }
 /* Estado durante animação de fechar/abrir */
 .linha-sa-detalhe.a-fechar td,
+.linha-sal-detalhe.a-fechar td,
 .linha-media-detalhe.a-fechar td,
 .linha-rem-detalhe.a-fechar td {
   max-height: 0 !important;
@@ -671,10 +678,12 @@ tbody tr.linha-isenta td:first-child {
   padding-bottom: 0 !important;
 }
 .linha-sa-detalhe.a-fechar,
+.linha-sal-detalhe.a-fechar,
 .linha-media-detalhe.a-fechar,
 .linha-rem-detalhe.a-fechar { border-bottom: none; }
 /* Estado final oculto — sem qualquer espaço */
 .linha-sa-detalhe.oculto,
+.linha-sal-detalhe.oculto,
 .linha-media-detalhe.oculto,
 .linha-rem-detalhe.oculto { display: none; }
 
@@ -1038,15 +1047,21 @@ footer a:hover { color: var(--branco); }
 
   /* ── Detalhe sempre expandido em PDF ── */
   .linha-sa-detalhe,
+  .linha-sal-detalhe,
   .linha-media-detalhe,
   .linha-rem-detalhe { display: table-row !important; }
   .linha-sa-detalhe td,
+  .linha-sal-detalhe td,
   .linha-media-detalhe td,
   .linha-rem-detalhe td {
     max-height: none !important;
     opacity: 1 !important;
     overflow: visible !important;
   }
+  /* Linha "Salário Bruto" sem IHT — sub-linhas continuam ausentes */
+  #linha-sal-toggle.linha-sem-detalhe ~ .linha-sal-detalhe { display: none !important; }
+  /* Sub-linha "Suplemento IHT" (empresa) — ausente quando IHT inativo */
+  #linha-iht-emp[hidden] { display: none !important; }
 
   /* ── Sem quebras de página internas ── */
   table            { page-break-inside: avoid; }

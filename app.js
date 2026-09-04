@@ -38,6 +38,8 @@ const SA_DIAS_MES = 21;   // dias úteis médios por mês
 const SA_MESES    = 11;   // meses com SA (exclui o mês de férias)
 const MESES_SAL   = 14;   // meses de salário (12 + sub. férias + sub. natal)
 
+const IHT_PCT_DEFAULT = 22;   // percentagem de suplemento IHT por defeito (%)
+
 /* ───────────────────────────────────────────────────────────────
    2. DADOS EMBUTIDOS — tabelas e manifest
    (funcionam sem servidor, com protocolo file://)
@@ -282,6 +284,8 @@ function calcularAjudasCusto(valorMensal) {
  * @property {boolean} incapacidadeTitular
  * @property {boolean} dependentesDeficiencia
  * @property {number}  salarioMensal
+ * @property {boolean} temIHT
+ * @property {number}  [ihtPercentagem]
  * @property {number}  saDiario
  * @property {boolean} saCartaoRefeicao
  * @property {number}  [saLimiteCustomNormal]
@@ -319,18 +323,30 @@ function calcularSimulacao(inp, tabelasAno) {
     inp.numDependentes,
   );
 
-  /* ── 2. Salário base ──────────────────────────────────────── */
-  const salMensal = inp.salarioMensal;
-  const salAnual  = salMensal * MESES_SAL;
+  /* ── 2. Salário base + Suplemento IHT ─────────────────────── */
+  const ihtAtivo = !!inp.temIHT;
+  const ihtPct   = ihtAtivo ? (inp.ihtPercentagem ?? 0) / 100 : 0;
 
-  // Retenção mensal sobre o salário
+  const salBaseMensal = inp.salarioMensal;
+  const salBaseAnual  = salBaseMensal * MESES_SAL;
+
+  // Suplemento IHT — paga-se nos mesmos 14 meses do salário base
+  const ihtMensal = salBaseMensal * ihtPct;
+  const ihtAnual  = ihtMensal * MESES_SAL;
+
+  // Base tributável do salário: salário base + suplemento IHT
+  // (mesma lógica do salário base — sujeita a retenção IRS e SS)
+  const salMensal = salBaseMensal + ihtMensal;
+  const salAnual  = salBaseAnual  + ihtAnual;
+
+  // Retenção mensal sobre o salário (base tributável já inclui o IHT)
   const retSalMensal = calcularRetencaoIRS(
     salMensal, tabRegiao, letraTabela,
     inp.numDependentes, inp.dependentesDeficiencia,
   );
   const retSalAnual = retSalMensal * MESES_SAL;
 
-  // SS trabalhador sobre salário
+  // SS trabalhador sobre salário (base tributável já inclui o IHT)
   const ssTrabSalMensal = calcularSSTrabalhador(salMensal);
   const ssTrabSalAnual  = ssTrabSalMensal * MESES_SAL;
 
@@ -383,8 +399,8 @@ function calcularSimulacao(inp, tabelasAno) {
     ? (inp.seguroSaudeMensal ?? 0)
     : 0;
 
-  // Seguro de acidentes de trabalho (calculado sobre salário anual)
-  const seguroATAnual      = salAnual * taxaAT;
+  // Seguro de acidentes de trabalho (calculado sobre salário base anual — não incide sobre o IHT)
+  const seguroATAnual      = salBaseAnual * taxaAT;
 
   const custoEmpresaAnual  = salAnual
     + ssPatronalSalAnual
@@ -423,6 +439,8 @@ function calcularSimulacao(inp, tabelasAno) {
     /* Trabalhador — mensal (médias) */
     t: {
       salarioMensal:       salMensal,
+      salarioBaseMensal:   salBaseMensal,
+      ihtMensal,
       saTotalMensal:       sa.totalMensal,
       saIsentoMensal:      sa.isentoMensal,
       saSujeitoMensal:     sa.sujeitoMensal,
@@ -434,6 +452,8 @@ function calcularSimulacao(inp, tabelasAno) {
 
       /* Anual */
       salarioAnual:        salAnual,
+      salarioBaseAnual:    salBaseAnual,
+      ihtAnual,
       saTotalAnual:        sa.totalAnual,
       saIsentoAnual:       sa.isentoAnual,
       saSujeitoAnual:      sa.sujeitoAnual,
@@ -444,12 +464,17 @@ function calcularSimulacao(inp, tabelasAno) {
       ssTrabalhadorAnual:  totalSSAnual,
       liquidoAnual,
       liquidoMediaMensal:  liquidoAnual / 12,
+
+      ihtAtivo,
+      ihtPercentagem:      ihtPct * 100,
     },
 
     /* Empresa — anual e mensal médio */
     e: {
-      salarioAnual:              salAnual,
-      salarioMensal:             salAnual                 / 12,
+      salarioAnual:              salBaseAnual,
+      salarioMensal:             salBaseAnual             / 12,
+      ihtAnual,
+      ihtMensal:                 ihtAnual                 / 12,
       saTotalAnual:              sa.totalAnual,
       saTotalMensal:             sa.totalAnual            / 12,
       acAnual:                   ac.anual,
@@ -466,6 +491,9 @@ function calcularSimulacao(inp, tabelasAno) {
       seguroATMensal:            seguroATAnual            / 12,
       custoEmpresaAnual,
       custoEmpresaMensal,
+
+      ihtAtivo,
+      ihtPercentagem:            ihtPct * 100,
     },
 
     /* Rácios */
@@ -485,6 +513,7 @@ function calcularSimulacao(inp, tabelasAno) {
 const LS = {
   ultimaSimulacao: 'sim_ultima_simulacao',
   taxaSeguroAT:    'sim_taxa_seguro_at',
+  percentagemIHT:  'sim_iht_percentagem',
 };
 
 function guardarSimulacao(inputs) {
@@ -502,6 +531,15 @@ function guardarTaxaSeguroAT(taxa) {
 function carregarTaxaSeguroAT() {
   const v = parseFloat(localStorage.getItem(LS.taxaSeguroAT));
   return isNaN(v) ? TAXAS.seguroAT : v;
+}
+
+function guardarPercentagemIHT(pct) {
+  try { localStorage.setItem(LS.percentagemIHT, String(pct)); } catch (_) {}
+}
+
+function carregarPercentagemIHT() {
+  const v = parseFloat(localStorage.getItem(LS.percentagemIHT));
+  return isNaN(v) ? IHT_PCT_DEFAULT : v;
 }
 
 /* ───────────────────────────────────────────────────────────────
@@ -541,6 +579,8 @@ function lerInputs() {
     incapacidadeTitular:     document.getElementById('incapacidade-titular').checked,
     dependentesDeficiencia:  document.getElementById('dependentes-deficiencia').checked,
     salarioMensal:           parseFloat(document.getElementById('salario-mensal').value) || 0,
+    temIHT:                  document.getElementById('tem-iht').checked,
+    ihtPercentagem:          parseFloat(document.getElementById('iht-percentagem').value) || 0,
     saDiario:                parseFloat(document.getElementById('sa-diario').value) || 0,
     saCartaoRefeicao:        cartao,
     saLimiteCustomNormal:    cartao ? undefined : limiteUI,
@@ -566,6 +606,8 @@ function preencherFormulario(inp) {
   chk('incapacidade-titular', inp.incapacidadeTitular);
   chk('dependentes-deficiencia', inp.dependentesDeficiencia);
   set('salario-mensal',       inp.salarioMensal);
+  chk('tem-iht',               inp.temIHT);
+  set('iht-percentagem',      inp.ihtPercentagem ?? carregarPercentagemIHT());
   set('sa-diario',            inp.saDiario ?? 6);
   chk('sa-cartao',            inp.saCartaoRefeicao);
 
@@ -581,6 +623,7 @@ function preencherFormulario(inp) {
   }
 
   atualizarPainelAC();
+  atualizarPainelIHT();
   atualizarPainelSeguroSaude();
   atualizarLimiteSA();
 }
@@ -589,6 +632,12 @@ function preencherFormulario(inp) {
 
 function atualizarPainelAC() {
   document.getElementById('painel-ac').hidden = !document.getElementById('tem-ac').checked;
+}
+
+/* ── Painel condicional IHT ─────────────────────────────────── */
+
+function atualizarPainelIHT() {
+  document.getElementById('painel-iht').hidden = !document.getElementById('tem-iht').checked;
 }
 
 /* ── Painel condicional Seguro Saúde ────────────────────────── */
@@ -671,6 +720,26 @@ function renderRelatorio(res) {
   /* Tabela trabalhador */
   cel('t-sal-mensal',       res.t.salarioMensal);
   cel('t-sal-anual',        res.t.salarioAnual);
+  cel('t-sal-base-mensal',  res.t.salarioBaseMensal);
+  cel('t-sal-base-anual',   res.t.salarioBaseAnual);
+  cel('t-iht-mensal',       res.t.ihtMensal);
+  cel('t-iht-anual',        res.t.ihtAnual);
+
+  const linhaSalToggle  = document.getElementById('linha-sal-toggle');
+  const linhasSalDetalhe = document.querySelectorAll('.linha-sal-detalhe');
+  if (res.t.ihtAtivo) {
+    document.getElementById('t-sal-label').textContent = 'Remuneração Bruta';
+    document.getElementById('t-iht-label').textContent =
+      `↳ Suplemento IHT (${res.t.ihtPercentagem.toLocaleString('pt-PT', { maximumFractionDigits: 2 })}%)`;
+    linhaSalToggle.classList.remove('linha-sem-detalhe');
+  } else {
+    document.getElementById('t-sal-label').textContent = 'Salário Bruto';
+    linhaSalToggle.classList.add('linha-sem-detalhe');
+    document.getElementById('sal-chevron').classList.remove('expandido');
+    linhasSalDetalhe.forEach(tr => tr.classList.remove('a-fechar'));
+    linhasSalDetalhe.forEach(tr => tr.classList.add('oculto'));
+  }
+
   cel('t-sa-total-mensal',  res.t.saTotalMensal);
   cel('t-sa-total-anual',   res.t.saTotalAnual);
   cel('t-sa-isento-mensal', res.t.saIsentoMensal);
@@ -697,6 +766,13 @@ function renderRelatorio(res) {
   cel('e-rem-anual',         res.e.remuneracoesTotaisAnual);
   cel('e-sal-mensal',        res.e.salarioMensal);
   cel('e-sal-anual',         res.e.salarioAnual);
+  cel('e-iht-mensal',        res.e.ihtMensal);
+  cel('e-iht-anual',         res.e.ihtAnual);
+  document.getElementById('e-iht-label').textContent =
+    res.e.ihtAtivo
+      ? `↳ Suplemento IHT (${res.e.ihtPercentagem.toLocaleString('pt-PT', { maximumFractionDigits: 2 })}%)`
+      : '↳ Suplemento IHT';
+  document.getElementById('linha-iht-emp').hidden = !res.e.ihtAtivo || res.e.ihtAnual === 0;
   cel('e-sa-mensal',         res.e.saTotalMensal);
   cel('e-sa-anual',          res.e.saTotalAnual);
   cel('e-ac-mensal',         res.e.acMensal);
@@ -748,9 +824,11 @@ function limparFormulario() {
   document.getElementById('sa-limite').value        = SA_LIMITES.normal.toFixed(2);
   document.getElementById('sa-limite-ajuda').textContent = 'Numerário — limite padrão 6,00 €/dia';
   document.getElementById('taxa-seguro-at').value   = (carregarTaxaSeguroAT() * 100).toFixed(2);
+  document.getElementById('iht-percentagem').value  = carregarPercentagemIHT();
 
   /* Esconder painéis condicionais */
   document.getElementById('painel-ac').hidden           = true;
+  document.getElementById('painel-iht').hidden          = true;
   document.getElementById('painel-seguro-saude').hidden = true;
 
   /* Repor estado do formulário */
@@ -797,6 +875,9 @@ async function init() {
   /* Pré-preencher taxa AT da localStorage */
   document.getElementById('taxa-seguro-at').value = (carregarTaxaSeguroAT() * 100).toFixed(2);
 
+  /* Pré-preencher percentagem IHT da localStorage */
+  document.getElementById('iht-percentagem').value = carregarPercentagemIHT();
+
   /* Atualizar rodapé com ano ativo */
   document.getElementById('rodape-tabelas').textContent =
     `Tabelas de retenção na fonte: ano ${manifest.anoAtivo}`;
@@ -841,6 +922,7 @@ async function init() {
 
   /* Painéis condicionais */
   document.getElementById('tem-ac').addEventListener('change', atualizarPainelAC);
+  document.getElementById('tem-iht').addEventListener('change', atualizarPainelIHT);
   document.getElementById('tem-seguro-saude').addEventListener('change', atualizarPainelSeguroSaude);
 
   /* Toggle genérico para linhas de detalhe expansíveis */
@@ -862,6 +944,10 @@ async function init() {
     }
   }
   document.getElementById('linha-sa-toggle').addEventListener('click',    () => toggleDetalhe('.linha-sa-detalhe',  'sa-chevron'));
+  document.getElementById('linha-sal-toggle').addEventListener('click',   () => {
+    if (document.getElementById('linha-sal-toggle').classList.contains('linha-sem-detalhe')) return;
+    toggleDetalhe('.linha-sal-detalhe', 'sal-chevron');
+  });
   document.getElementById('linha-bruto-toggle').addEventListener('click', () => toggleDetalhe('.linha-media-bruto', 'bruto-chevron'));
   document.getElementById('linha-liq-toggle').addEventListener('click',   () => toggleDetalhe('.linha-media-liq',   'liq-chevron'));
   document.getElementById('linha-rem-toggle').addEventListener('click',   () => toggleDetalhe('.linha-rem-detalhe', 'rem-chevron'));
@@ -875,6 +961,12 @@ async function init() {
   document.getElementById('taxa-seguro-at').addEventListener('change', () => {
     const v = parseFloat(document.getElementById('taxa-seguro-at').value);
     if (!isNaN(v)) guardarTaxaSeguroAT(v / 100);
+  });
+
+  /* Percentagem IHT → guardar em localStorage */
+  document.getElementById('iht-percentagem').addEventListener('change', () => {
+    const v = parseFloat(document.getElementById('iht-percentagem').value);
+    if (!isNaN(v)) guardarPercentagemIHT(v);
   });
 
   /* Submit → calcular */
