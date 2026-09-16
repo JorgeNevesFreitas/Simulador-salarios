@@ -75,6 +75,42 @@
             <span class="campo-ajuda" style="display:inline">(contam em dobro na parcela adicional)</span>
           </label>
         </fieldset>
+
+        <label class="toggle-label" style="margin-top:0.75rem">
+          <span class="toggle">
+            <input type="checkbox" id="irs-jovem-ativo" name="irsJovemAtivo" />
+            <span class="toggle-slider"></span>
+          </span>
+          IRS Jovem
+        </label>
+        <div id="painel-irs-jovem" class="painel-condicional" hidden>
+          <div class="campo-grupo" style="margin-top:0.75rem">
+            <label for="irs-jovem-idade">Idade do trabalhador</label>
+            <input type="number" id="irs-jovem-idade" name="irsJovemIdade" min="0" max="120" step="1" placeholder="Idade" />
+            <span class="campo-ajuda campo-aviso" id="irs-jovem-aviso-idade" hidden>
+              ⚠ O regime aplica-se até aos 35 anos — a simulação prossegue mesmo assim.
+            </span>
+          </div>
+          <div class="campo-grupo">
+            <label for="irs-jovem-ano-regime">Ano de obtenção de rendimentos no regime</label>
+            <select id="irs-jovem-ano-regime" name="irsJovemAnoRegime">
+              <option value="">Selecione…</option>
+              <option value="1">1.º ano — isenção 100%</option>
+              <option value="2">2.º ano — isenção 75%</option>
+              <option value="3">3.º ano — isenção 75%</option>
+              <option value="4">4.º ano — isenção 75%</option>
+              <option value="5">5.º ano — isenção 50%</option>
+              <option value="6">6.º ano — isenção 50%</option>
+              <option value="7">7.º ano — isenção 50%</option>
+              <option value="8">8.º ano — isenção 25%</option>
+              <option value="9">9.º ano — isenção 25%</option>
+              <option value="10">10.º ano — isenção 25%</option>
+            </select>
+            <span class="campo-ajuda campo-aviso" id="irs-jovem-aviso-ano" hidden>
+              ⚠ Selecione o ano do regime para aplicar a isenção de IRS.
+            </span>
+          </div>
+        </div>
       </section>
 
       <!-- Badge dinâmico com a tabela AT selecionada -->
@@ -323,10 +359,13 @@
                   <td id="t-bruto-media-mensal">—</td>
                   <td>—</td>
                 </tr>
-                <tr>
-                  <td>(−) Retenção IRS</td>
+                <tr id="linha-ret-toggle" class="linha-sem-detalhe">
+                  <td><span class="sa-chevron" id="ret-chevron"></span>(−) Retenção IRS</td>
                   <td id="t-ret-mensal" class="valor-negativo">—</td>
                   <td id="t-ret-anual"  class="valor-negativo">—</td>
+                </tr>
+                <tr class="linha-isenta linha-ret-detalhe oculto">
+                  <td colspan="3" id="t-irs-jovem-info">—</td>
                 </tr>
                 <tr>
                   <td>(−) Segurança Social (11%)</td>

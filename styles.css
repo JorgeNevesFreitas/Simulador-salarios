@@ -634,12 +634,15 @@ tbody tr.linha-isenta td:first-child {
 #linha-sa-toggle,
 #linha-bruto-toggle,
 #linha-liq-toggle,
-#linha-rem-toggle { cursor: pointer; user-select: none; }
+#linha-rem-toggle,
+#linha-ret-toggle { cursor: pointer; user-select: none; }
 #linha-sa-toggle:hover td:first-child { color: var(--azul-medio); }
 
-/* Linha "Salário Bruto" sem IHT — não expansível */
-#linha-sal-toggle.linha-sem-detalhe { cursor: default; }
-#linha-sal-toggle.linha-sem-detalhe .sa-chevron { display: none; }
+/* Linha "Salário Bruto" sem IHT / "Retenção IRS" sem IRS Jovem — não expansíveis */
+#linha-sal-toggle.linha-sem-detalhe,
+#linha-ret-toggle.linha-sem-detalhe { cursor: default; }
+#linha-sal-toggle.linha-sem-detalhe .sa-chevron,
+#linha-ret-toggle.linha-sem-detalhe .sa-chevron { display: none; }
 
 .sa-chevron {
   display: inline-block;
@@ -660,7 +663,8 @@ tbody tr.linha-isenta td:first-child {
 .linha-sa-detalhe td,
 .linha-sal-detalhe td,
 .linha-media-detalhe td,
-.linha-rem-detalhe td {
+.linha-rem-detalhe td,
+.linha-ret-detalhe td {
   overflow: hidden;
   max-height: 3rem;
   opacity: 1;
@@ -671,7 +675,8 @@ tbody tr.linha-isenta td:first-child {
 .linha-sa-detalhe.a-fechar td,
 .linha-sal-detalhe.a-fechar td,
 .linha-media-detalhe.a-fechar td,
-.linha-rem-detalhe.a-fechar td {
+.linha-rem-detalhe.a-fechar td,
+.linha-ret-detalhe.a-fechar td {
   max-height: 0 !important;
   opacity: 0;
   padding-top: 0 !important;
@@ -680,12 +685,14 @@ tbody tr.linha-isenta td:first-child {
 .linha-sa-detalhe.a-fechar,
 .linha-sal-detalhe.a-fechar,
 .linha-media-detalhe.a-fechar,
-.linha-rem-detalhe.a-fechar { border-bottom: none; }
+.linha-rem-detalhe.a-fechar,
+.linha-ret-detalhe.a-fechar { border-bottom: none; }
 /* Estado final oculto — sem qualquer espaço */
 .linha-sa-detalhe.oculto,
 .linha-sal-detalhe.oculto,
 .linha-media-detalhe.oculto,
-.linha-rem-detalhe.oculto { display: none; }
+.linha-rem-detalhe.oculto,
+.linha-ret-detalhe.oculto { display: none; }
 
 /* ── Rodapé do relatório ───────────────────────────────────── */
 .relatorio-nota {
@@ -778,6 +785,13 @@ footer a:hover { color: var(--branco); }
   font-size: var(--text-xs);
   color: var(--vermelho);
   margin-top: var(--gap-xs);
+}
+
+/* Aviso inline não bloqueante (ex.: IRS Jovem — idade / ano do regime) */
+.campo-aviso {
+  display: block;
+  color: var(--vermelho);
+  font-weight: 600;
 }
 
 /* Estado de carregamento (por se utilizar) */
@@ -1049,17 +1063,20 @@ footer a:hover { color: var(--branco); }
   .linha-sa-detalhe,
   .linha-sal-detalhe,
   .linha-media-detalhe,
-  .linha-rem-detalhe { display: table-row !important; }
+  .linha-rem-detalhe,
+  .linha-ret-detalhe { display: table-row !important; }
   .linha-sa-detalhe td,
   .linha-sal-detalhe td,
   .linha-media-detalhe td,
-  .linha-rem-detalhe td {
+  .linha-rem-detalhe td,
+  .linha-ret-detalhe td {
     max-height: none !important;
     opacity: 1 !important;
     overflow: visible !important;
   }
-  /* Linha "Salário Bruto" sem IHT — sub-linhas continuam ausentes */
-  #linha-sal-toggle.linha-sem-detalhe ~ .linha-sal-detalhe { display: none !important; }
+  /* Linha "Salário Bruto" sem IHT / "Retenção IRS" sem IRS Jovem — sub-linhas continuam ausentes */
+  #linha-sal-toggle.linha-sem-detalhe ~ .linha-sal-detalhe,
+  #linha-ret-toggle.linha-sem-detalhe ~ .linha-ret-detalhe { display: none !important; }
   /* Sub-linha "Suplemento IHT" (empresa) — ausente quando IHT inativo */
   #linha-iht-emp[hidden] { display: none !important; }
 

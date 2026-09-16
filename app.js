@@ -40,6 +40,12 @@ const MESES_SAL   = 14;   // meses de salário (12 + sub. férias + sub. natal)
 
 const IHT_PCT_DEFAULT = 22;   // percentagem de suplemento IHT por defeito (%)
 
+// IRS Jovem (art. 12.º-B CIRS) — teto anual de isenção = 55 × IAS
+// IAS atualizado todos os anos; ajustar aqui quando a AT publicar o novo valor.
+const IAS_2026 = 537.13;
+const IRS_JOVEM_TETO_ANUAL = 55 * IAS_2026;   // 29 542,15 € em 2026
+const IRS_JOVEM_IDADE_LIMITE = 35;
+
 /* ───────────────────────────────────────────────────────────────
    2. DADOS EMBUTIDOS — tabelas e manifest
    (funcionam sem servidor, com protocolo file://)
@@ -201,6 +207,55 @@ function calcularRetencaoIRS(salarioMensal, tabelaRegiao, letraTabela, numDepend
 }
 
 /* ───────────────────────────────────────────────────────────────
+   5.1 IRS JOVEM (art. 12.º-B CIRS)
+
+   Isenção parcial de IRS sobre rendimentos de Categoria A, para
+   trabalhadores até aos 35 anos, durante 10 anos, com percentagem
+   decrescente por ano do regime:
+     1.º ano → 100 %   2.º–4.º → 75 %   5.º–7.º → 50 %   8.º–10.º → 25 %
+   Teto anual de rendimento isento: 55 × IAS (IRS_JOVEM_TETO_ANUAL).
+
+   Simplificação: a retenção mensal "normal" (tabela AT) é reduzida na
+   proporção da percentagem efetiva de isenção anual. É a aproximação
+   habitual em folhas de salário quando o cálculo não é feito mês a mês
+   de forma cumulativa; o valor definitivo apura-se sempre na
+   declaração anual de IRS.
+   ─────────────────────────────────────────────────────────────── */
+
+/**
+ * @param {number} anoRegime — 1 a 10
+ * @returns {number} percentagem de isenção (0–1)
+ */
+function percentagemIsencaoIRSJovem(anoRegime) {
+  if (anoRegime === 1) return 1.00;
+  if (anoRegime >= 2 && anoRegime <= 4) return 0.75;
+  if (anoRegime >= 5 && anoRegime <= 7) return 0.50;
+  if (anoRegime >= 8 && anoRegime <= 10) return 0.25;
+  return 0;
+}
+
+/**
+ * @param {number} rendimentoAnualElegivel — rendimento anual de categoria A sujeito a IRS
+ * @param {number} anoRegime — 1 a 10
+ * @returns {{ percentagemIsencao: number, parcelaIsentaAnual: number, percentagemEfetiva: number, tetoExcedido: boolean }}
+ */
+function calcularIRSJovem(rendimentoAnualElegivel, anoRegime) {
+  const percentagemIsencao = percentagemIsencaoIRSJovem(anoRegime);
+  const isencaoSemTeto     = rendimentoAnualElegivel * percentagemIsencao;
+  const parcelaIsentaAnual = Math.min(isencaoSemTeto, IRS_JOVEM_TETO_ANUAL);
+  const percentagemEfetiva = rendimentoAnualElegivel > 0
+    ? parcelaIsentaAnual / rendimentoAnualElegivel
+    : 0;
+
+  return {
+    percentagemIsencao,
+    parcelaIsentaAnual,
+    percentagemEfetiva,
+    tetoExcedido: isencaoSemTeto > IRS_JOVEM_TETO_ANUAL,
+  };
+}
+
+/* ───────────────────────────────────────────────────────────────
    6. SEGURANÇA SOCIAL DO TRABALHADOR
    ─────────────────────────────────────────────────────────────── */
 
@@ -295,6 +350,9 @@ function calcularAjudasCusto(valorMensal) {
  * @property {boolean} temSeguroSaude
  * @property {number}  [seguroSaudeMensal]
  * @property {number}  [taxaSeguroAT]
+ * @property {boolean} irsJovemAtivo
+ * @property {number}  [irsJovemIdade]      — apenas para aviso; não altera o cálculo
+ * @property {number}  [irsJovemAnoRegime]  — 1 a 10
  */
 
 /**
@@ -339,12 +397,12 @@ function calcularSimulacao(inp, tabelasAno) {
   const salMensal = salBaseMensal + ihtMensal;
   const salAnual  = salBaseAnual  + ihtAnual;
 
-  // Retenção mensal sobre o salário (base tributável já inclui o IHT)
-  const retSalMensal = calcularRetencaoIRS(
+  // Retenção mensal "normal" sobre o salário, segundo a tabela AT
+  // (base tributável já inclui o IHT; ainda sem a redução do IRS Jovem)
+  const retSalMensalNormal = calcularRetencaoIRS(
     salMensal, tabRegiao, letraTabela,
     inp.numDependentes, inp.dependentesDeficiencia,
   );
-  const retSalAnual = retSalMensal * MESES_SAL;
 
   // SS trabalhador sobre salário (base tributável já inclui o IHT)
   const ssTrabSalMensal = calcularSSTrabalhador(salMensal);
@@ -358,8 +416,27 @@ function calcularSimulacao(inp, tabelasAno) {
     inp.saLimiteCustomCartao,
   );
 
+  /* ── 2.1 IRS Jovem (art. 12.º-B CIRS) ─────────────────────── */
+  // Rendimento anual elegível: salário base + IHT (×14) + SA sujeito a IRS (×11).
+  // Fica fora a Ajuda de Custo (já isenta) e o Seguro de Saúde.
+  const irsJovemRendimentoElegivel = salAnual + sa.sujeitoAnual;
+  const irsJovemAtivo          = !!inp.irsJovemAtivo;
+  const irsJovemAnoRegime      = inp.irsJovemAnoRegime || null;
+  const irsJovemAnoRegimeValido = irsJovemAtivo && !!irsJovemAnoRegime;
+
+  const irsJovem = irsJovemAnoRegimeValido
+    ? calcularIRSJovem(irsJovemRendimentoElegivel, irsJovemAnoRegime)
+    : { percentagemIsencao: 0, parcelaIsentaAnual: 0, percentagemEfetiva: 0, tetoExcedido: false };
+
+  // Redução proporcional da retenção "normal" pela percentagem efetiva de isenção
+  // (quando o IRS Jovem não está ativo ou o ano não foi escolhido, percentagemEfetiva = 0
+  // e o comportamento fica exatamente igual ao cálculo sem IRS Jovem)
+  const retSalMensal = retSalMensalNormal * (1 - irsJovem.percentagemEfetiva);
+  const retSalAnual  = retSalMensal * MESES_SAL;
+
   // Retenção IRS sobre SA sujeito: aplica a taxa efetiva do salário base
-  // (simplificação válida quando SA sujeito não altera escalão de forma relevante)
+  // (simplificação válida quando SA sujeito não altera escalão de forma relevante;
+  //  herda automaticamente a redução do IRS Jovem, já refletida em retSalMensal)
   const taxaEfetiva      = salMensal > 0 ? retSalMensal / salMensal : 0;
   const retSAMensal      = sa.sujeitoMensal * taxaEfetiva;
   const retSAAnual       = retSAMensal * SA_MESES;
@@ -467,6 +544,19 @@ function calcularSimulacao(inp, tabelasAno) {
 
       ihtAtivo,
       ihtPercentagem:      ihtPct * 100,
+
+      /* IRS Jovem */
+      irsJovemAtivo,
+      irsJovemAnoRegimeValido,
+      irsJovemAnoRegime:            irsJovemAnoRegime ?? null,
+      irsJovemIdade:                inp.irsJovemIdade ?? null,
+      irsJovemAvisoIdade:           irsJovemAtivo && (inp.irsJovemIdade ?? 0) > IRS_JOVEM_IDADE_LIMITE,
+      irsJovemAvisoAnoRegime:       irsJovemAtivo && !irsJovemAnoRegime,
+      irsJovemRendimentoElegivel,
+      irsJovemPercentagemIsencao:   irsJovem.percentagemIsencao * 100,
+      irsJovemPercentagemEfetiva:   irsJovem.percentagemEfetiva * 100,
+      irsJovemParcelaIsentaAnual:   irsJovem.parcelaIsentaAnual,
+      irsJovemTetoExcedido:         irsJovem.tetoExcedido,
     },
 
     /* Empresa — anual e mensal médio */
@@ -590,6 +680,9 @@ function lerInputs() {
     temSeguroSaude:          document.getElementById('tem-seguro-saude').checked,
     seguroSaudeMensal:       parseFloat(document.getElementById('seguro-saude-mensal').value) || 0,
     taxaSeguroAT:            (isNaN(taxaATpct) ? 1.85 : taxaATpct) / 100,
+    irsJovemAtivo:           document.getElementById('irs-jovem-ativo').checked,
+    irsJovemIdade:           parseInt(document.getElementById('irs-jovem-idade').value, 10) || undefined,
+    irsJovemAnoRegime:       parseInt(document.getElementById('irs-jovem-ano-regime').value, 10) || undefined,
   };
 }
 
@@ -622,10 +715,16 @@ function preencherFormulario(inp) {
     set('taxa-seguro-at', (inp.taxaSeguroAT * 100).toFixed(2));
   }
 
+  chk('irs-jovem-ativo',      inp.irsJovemAtivo);
+  set('irs-jovem-idade',      inp.irsJovemIdade ?? '');
+  set('irs-jovem-ano-regime', inp.irsJovemAnoRegime ?? '');
+
   atualizarPainelAC();
   atualizarPainelIHT();
   atualizarPainelSeguroSaude();
   atualizarLimiteSA();
+  atualizarPainelIRSJovem();
+  atualizarAvisosIRSJovem();
 }
 
 /* ── Painel condicional AC ──────────────────────────────────── */
@@ -645,6 +744,25 @@ function atualizarPainelIHT() {
 function atualizarPainelSeguroSaude() {
   document.getElementById('painel-seguro-saude').hidden =
     !document.getElementById('tem-seguro-saude').checked;
+}
+
+/* ── Painel condicional IRS Jovem ───────────────────────────── */
+
+function atualizarPainelIRSJovem() {
+  document.getElementById('painel-irs-jovem').hidden =
+    !document.getElementById('irs-jovem-ativo').checked;
+}
+
+/* Avisos inline (idade > 35 · ano do regime por selecionar) — não bloqueiam o cálculo */
+function atualizarAvisosIRSJovem() {
+  const ativo = document.getElementById('irs-jovem-ativo').checked;
+  const idade = parseInt(document.getElementById('irs-jovem-idade').value, 10);
+  const ano   = document.getElementById('irs-jovem-ano-regime').value;
+
+  document.getElementById('irs-jovem-aviso-idade').hidden =
+    !(ativo && !isNaN(idade) && idade > IRS_JOVEM_IDADE_LIMITE);
+  document.getElementById('irs-jovem-aviso-ano').hidden =
+    !(ativo && !ano);
 }
 
 /* ── Atualizar limite SA e label quando muda o toggle cartão ── */
@@ -752,6 +870,36 @@ function renderRelatorio(res) {
   cel('t-bruto-anual',      res.t.totalBrutoAnual);
   cel('t-ret-mensal',       res.t.retencaoIRSMensal);
   cel('t-ret-anual',        res.t.retencaoIRSAnual);
+
+  /* Linha informativa expansível — IRS Jovem */
+  const linhaRetToggle   = document.getElementById('linha-ret-toggle');
+  const linhasRetDetalhe = document.querySelectorAll('.linha-ret-detalhe');
+  if (res.t.irsJovemAtivo) {
+    let infoIRSJovem;
+    if (!res.t.irsJovemAnoRegimeValido) {
+      infoIRSJovem = '↳ IRS Jovem: ' + (res.t.irsJovemAvisoAnoRegime
+        ? '⚠ selecione o ano do regime para aplicar a isenção de IRS.'
+        : 'regime ativo, sem isenção aplicada.');
+    } else {
+      infoIRSJovem = `↳ IRS Jovem — ${res.t.irsJovemAnoRegime}.º ano: isenção de `
+        + `${res.t.irsJovemPercentagemIsencao.toLocaleString('pt-PT', { maximumFractionDigits: 0 })}%`
+        + (res.t.irsJovemTetoExcedido
+            ? ` (efetiva ${res.t.irsJovemPercentagemEfetiva.toLocaleString('pt-PT', { maximumFractionDigits: 1 })}% — teto anual atingido)`
+            : '')
+        + ` · valor anual isento: ${fmt(res.t.irsJovemParcelaIsentaAnual)}`
+        + (res.t.irsJovemTetoExcedido
+            ? ' · o excedente ao teto é tributado normalmente'
+            : '');
+    }
+    document.getElementById('t-irs-jovem-info').textContent = infoIRSJovem;
+    linhaRetToggle.classList.remove('linha-sem-detalhe');
+  } else {
+    linhaRetToggle.classList.add('linha-sem-detalhe');
+    document.getElementById('ret-chevron').classList.remove('expandido');
+    linhasRetDetalhe.forEach(tr => tr.classList.remove('a-fechar'));
+    linhasRetDetalhe.forEach(tr => tr.classList.add('oculto'));
+  }
+
   cel('t-ss-mensal',        res.t.ssTrabalhadorMensal);
   cel('t-ss-anual',         res.t.ssTrabalhadorAnual);
   cel('t-liq-mensal',           res.t.liquidoMensal);
@@ -801,10 +949,19 @@ function renderRelatorio(res) {
 
   /* Nota de rodapé do relatório */
   const modoSA = res.saCartao ? 'cartão refeição' : 'numerário';
+  const notaIRSJovem = (res.t.irsJovemAtivo && res.t.irsJovemAnoRegimeValido)
+    ? `<strong>IRS Jovem:</strong> regime considerado no cálculo — ${res.t.irsJovemAnoRegime}.º ano `
+      + `· isenção ${res.t.irsJovemPercentagemIsencao.toLocaleString('pt-PT', { maximumFractionDigits: 0 })}%`
+      + (res.t.irsJovemTetoExcedido
+          ? ` (efetiva ${res.t.irsJovemPercentagemEfetiva.toLocaleString('pt-PT', { maximumFractionDigits: 1 })}%, teto anual atingido)`
+          : '')
+      + ` · valor definitivo apurado na declaração anual de IRS.<br>`
+    : '';
   document.getElementById('relatorio-nota').innerHTML =
     `<strong>Tabela AT em uso:</strong> ${res.ano} · Tabela ${res.letraTabela} — ${res.descTabela}<br>`
     + `<strong>Região:</strong> ${res.regiao}<br>`
     + `<strong>Subsídio de Alimentação:</strong> limite de isenção ${fmt(res.saLimite)}/dia (${modoSA}) · 21 dias × 11 meses<br>`
+    + notaIRSJovem
     + `<strong>Nota metodológica:</strong> Os valores mensais são médias (anual ÷ 12). `
     + `A retenção IRS e a SS sobre salário incidem nos 14 meses; `
     + `sobre a parte sujeita do SA incidem nos 11 meses.`;
@@ -830,6 +987,9 @@ function limparFormulario() {
   document.getElementById('painel-ac').hidden           = true;
   document.getElementById('painel-iht').hidden          = true;
   document.getElementById('painel-seguro-saude').hidden = true;
+  document.getElementById('painel-irs-jovem').hidden    = true;
+  document.getElementById('irs-jovem-aviso-idade').hidden = true;
+  document.getElementById('irs-jovem-aviso-ano').hidden    = true;
 
   /* Repor estado do formulário */
   document.getElementById('secao-rubricas').classList.add('secao-desativada');
@@ -925,6 +1085,14 @@ async function init() {
   document.getElementById('tem-iht').addEventListener('change', atualizarPainelIHT);
   document.getElementById('tem-seguro-saude').addEventListener('change', atualizarPainelSeguroSaude);
 
+  /* Painel condicional IRS Jovem + avisos inline (idade / ano do regime) */
+  document.getElementById('irs-jovem-ativo').addEventListener('change', () => {
+    atualizarPainelIRSJovem();
+    atualizarAvisosIRSJovem();
+  });
+  document.getElementById('irs-jovem-idade').addEventListener('input', atualizarAvisosIRSJovem);
+  document.getElementById('irs-jovem-ano-regime').addEventListener('change', atualizarAvisosIRSJovem);
+
   /* Toggle genérico para linhas de detalhe expansíveis */
   function toggleDetalhe(seletor, idChevron) {
     const linhas = [...document.querySelectorAll(seletor)];
@@ -951,6 +1119,10 @@ async function init() {
   document.getElementById('linha-bruto-toggle').addEventListener('click', () => toggleDetalhe('.linha-media-bruto', 'bruto-chevron'));
   document.getElementById('linha-liq-toggle').addEventListener('click',   () => toggleDetalhe('.linha-media-liq',   'liq-chevron'));
   document.getElementById('linha-rem-toggle').addEventListener('click',   () => toggleDetalhe('.linha-rem-detalhe', 'rem-chevron'));
+  document.getElementById('linha-ret-toggle').addEventListener('click',   () => {
+    if (document.getElementById('linha-ret-toggle').classList.contains('linha-sem-detalhe')) return;
+    toggleDetalhe('.linha-ret-detalhe', 'ret-chevron');
+  });
 
   /* Toggle visibilidade card Remuneração Líquida */
   document.getElementById('toggle-mostrar-liq').addEventListener('change', e => {
